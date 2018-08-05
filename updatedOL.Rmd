@@ -1,0 +1,110 @@
+---
+title: "olympic"
+author: "Amit"
+date: "8/5/2018"
+output:
+  html_document: 
+    keep_md: yes
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+# Installing the required packages for Analysis and Visualization purpose
+#install.packages("repr")
+library(ggplot2)
+library(readr)
+library(plyr)
+library(rworldmap)
+library(repr)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r}
+# loading file in R
+summer<- read.csv(file = "~/Desktop/DATASET/olympic-games/summer.csv")
+```
+
+
+```{r}
+# Looking and understanding data 
+head(summer)
+str(summer)
+
+```
+```{r}
+
+count=c(1)
+summer$Medalcount=count
+summer$Athlete=as.character(summer$Athlete)
+```
+```{r pressure, echo=FALSE}
+# loading file in R
+options(repr.plot.width = 6,repr.plot.height = 6)
+world<-map_data(map = "world")
+world<-world[world$region!= "Antartica",]
+y=ddply(summer,.(Country,Medal),numcolwise(sum))
+sPDF<- joinCountryData2Map(y
+                           ,joinCode = "ISO3",
+                           nameJoinColumn = "Country")
+
+mapCountryData(sPDF,
+               nameColumnToPlot = 'Medalcount')
+```
+```{r}
+Countries=as.data.frame(table(summer$Country,summer$Medalcount))
+colnames(Countries)=c("Country","a","Medalcount")
+Countries=Countries[order(-Countries$Medalcount),]
+CountriesFilter=head(Countries,n=5)
+topCountryFilter=summer[summer$Country %in% CountriesFilter$Country,] 
+
+options(repr.plot.width=6, repr.plot.height=3)
+x=ddply(topCountryFilter, .(Country,Year), numcolwise(sum))
+ggplot(x,aes(Year,Medalcount,color=Country,group=Country))+geom_point()+geom_line()
+```
+```{r}
+y=ddply(topCountryFilter, .(Country,Medal), numcolwise(sum))
+ggplot(y,aes(x=reorder(Country,Medalcount),y=Medalcount,fill=Medal,group=Medal))+geom_bar(stat='identity')
+```
+```{r}
+tab=as.data.frame(table(summer$Athlete,summer$Medalcount))
+colnames(tab)=c("Athlete","a","Medalcount")
+topAthelete=tab[order(-tab$Medalcount),]
+topAthelete=head(topAthelete,n=20)
+topAthelete$Athlete=as.character(topAthelete$Athlete)
+
+topAtheleteFilter=summer[summer$Athlete %in% topAthelete$Athlete,]   
+y=ddply(topAtheleteFilter, .(Athlete,Medal), numcolwise(sum))
+ggplot(y,aes(x=reorder(Athlete,Medalcount),y=Medalcount,fill=Medal,group=Medal))+geom_bar(stat='identity') +coord_flip()
+```
+```{r}
+#Which countries produce the most successful candidates
+y=ddply(topAtheleteFilter, .(Country,Medal), numcolwise(sum))
+ggplot(y,aes(x=reorder(Country,Medalcount),y=Medalcount,fill=Medal,group=Medal))+geom_bar(stat='identity')
+```
+```{r}
+# which sports produces most atheletes
+options(repr.plot.width=6, repr.plot.height=3)
+y=ddply(topAtheleteFilter, .(Sport,Medal), numcolwise(sum))
+ggplot(y,aes(x=reorder(Sport,Medalcount),y=Medalcount,fill=Medal,group=Medal))+geom_bar(stat='identity')
+```
+
+```{r}
+# Total number of medals per sport
+options(repr.plot.width=6, repr.plot.height=6)
+y=ddply(summer, .(Sport,Medal), numcolwise(sum))
+ggplot(y,aes(x=reorder(Sport,Medalcount),y=Medalcount,fill=Medal,group=Medal))+geom_bar(stat='identity') +coord_flip()
+```
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
